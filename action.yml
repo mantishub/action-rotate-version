@@ -1,0 +1,28 @@
+name: "Rotate MantisHub Version"
+description: "An action to rotate versions in MantisHub"
+
+inputs:
+  url:
+    description: "Base URL of the MantisHub API"
+    required: true
+  api-key:
+    description: "API key for authentication"
+    required: true
+  project:
+    description: "Project Name"
+    required: true
+  placeholder-name:
+    description: "Placeholder name for next release e.g vNext"
+    required: true
+  release-name:
+    description: "Current release tag name e.g 1.0.0"
+    required: true
+  next-release-in-days:
+    description: "Next release in days"
+    required: true
+outputs:
+  version-id:
+    description: "The ID of the created version."
+runs:
+  using: "node20"
+  main: "index.js"
