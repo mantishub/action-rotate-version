@@ -23,7 +23,7 @@ async function run() {
     }
     const newVersion = await rotateVersion(params);
     console.log(`::set-output name=version-id::${newVersion.version.id}`);
-    return newVersion.id;
+    return newVersion.version.id;
 }
 
 /**

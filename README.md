@@ -1,5 +1,5 @@
-# MantisHub Rotate Version GitHub Action
-
+# MantisHub Next Version GitHub Action
+One pattern is to always have the next release be named “vNext” and renaming such release to theappropriate name when released and then creating a new “vNext”. It should be possible to implement such pattern.
 This GitHub Action automates the process of updating an existing version `(vNext)` to the current release version in MantisHub and creating a new release version `(vNext)` for future use.
 
 ### Usage
@@ -24,6 +24,12 @@ jobs:
           release-name: ${{ inputs.TAG_NAME }}
           next-release-in-days: 7
 ```
+This will do the following:
+
+- Rename `vNext` to `{{tag-name}}` and mark it as released by setting `released = true` and `release-date = now`
+- Create a new `vNext` release with `release-date` of `now + 7` days and `released = false` and `obsolete = false`.
+
+
 ### Example workflow file
 This workflow demonstrates how to use the action-rotate-version in a GitHub Actions pipeline to update an existing release version and create a new one in a MantisHub project. The workflow checks out the code, runs the custom action, and retrieves the new version ID, showcasing effective version management automation.
 #### Using Step ID to Fetch Outputs in GitHub Actions
