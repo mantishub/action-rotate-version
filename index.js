@@ -1,4 +1,10 @@
-const https = require('https');
+/**************************************************************************
+ MantisHub GitHub Actions
+ Copyright (c) MantisHub - Victor Boctor
+ All rights reserved.
+ **************************************************************************/
+
+ const https = require('https');
 
 /**
  * Env variables from GitHub workflow input
@@ -14,13 +20,13 @@ const params = {
 
 /**
  * Main function
- *
  */
 async function run() {
     if (!params.url || !params.apiKey || !params.project || !params.releaseName || !params.project
         || !params.placeholderName || !params.placeholderName) {
         throw new Error("Project name, url and api-key inputs are required.");
     }
+
     const newVersion = await rotateVersion(params);
     console.log(`::set-output name=version-id::${newVersion.version.id}`);
     return newVersion.version.id;
@@ -38,14 +44,17 @@ async function rotateVersion(data) {
             releaseName: data.releaseName,
             nextReleaseInDays: data.nextReleaseInDays
         };
+
         // validate request body for create version
         const validated = validateInput(body);
         if (!validated) {
             console.error('Validation errors')
             process.exit(1)
         }
+
         // fetch project id from project name
         const projectID = await getProjectID(String(data.project));
+
         // get version ID from name e.g vNext
         const versionID = await getVersionID(projectID, data.placeholderName);
         if (versionID !== null) {
@@ -55,8 +64,10 @@ async function rotateVersion(data) {
                 released: true,
                 timestamp: getDate(),
             };
+
             await updateVersion(projectID, versionID, updateVersionBody);
         }
+
         // Create a new version with placeholder name
         const createVersionBody = {
             name: body.placeholderName,
@@ -64,12 +75,15 @@ async function rotateVersion(data) {
             obsolete: false,
             timestamp: getDate(parseInt(body.nextReleaseInDays, 10))
         };
+
         return await createVersion(projectID, createVersionBody);
     } catch (error) {
         console.error("Failed to rotate version:", error.message);
+
         if (error.response) {
             console.error("Error response data:", error.response.data);
         }
+
         process.exit(1);
     }
 }
@@ -90,9 +104,11 @@ async function httpRequest(url, method = 'GET', body = null) {
                 'Content-Type': 'application/json',
             }
         }
+
         if (body !== null) {
             options.body = JSON.stringify(body)
         }
+
         const req = https.request(url, options, (res) => {
             let data = '';
             res.on('data', (chunk) => {
@@ -108,12 +124,15 @@ async function httpRequest(url, method = 'GET', body = null) {
                 }
             });
         });
+
         if (body !== null) {
             req.write(JSON.stringify(body));
         }
+
         req.on('error', (e) => {
             reject(e); // Reject the promise with the error
         });
+
         req.end(); // End the request
     });
 }
@@ -177,15 +196,18 @@ async function getProjectID(projectName) {
 async function getVersionID(projectID, versionName) {
     try {
         const response = await fetchVersions(projectID);
+
         // Check if response.version is empty
         if (!(Object.prototype.hasOwnProperty.call(response, "versions") && response.versions.length > 0)) {
             console.log(`No results found`);
             process.exit(1);
         }
+
         // use `find` to search for the project by name
         const version = response.versions.find(function (p) {
             return p.name === versionName;
         });
+
         return version ? version.id : null;
     } catch (error) {
         console.error("Error fetching version:", error.message);

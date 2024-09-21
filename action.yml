@@ -1,5 +1,5 @@
 name: "Rotate MantisHub Version"
-description: "An action to rotate versions in MantisHub"
+description: "An action to rename upcoming release to specify name, mark it as released and create a new upcoming release."
 
 inputs:
   url:
@@ -12,10 +12,10 @@ inputs:
     description: "Project Name"
     required: true
   placeholder-name:
-    description: "Placeholder name for next release e.g vNext"
+    description: "Placeholder name for upcoming release e.g vNext"
     required: true
   release-name:
-    description: "Current release tag name e.g 1.0.0"
+    description: "Name of released version e.g 1.0.0"
     required: true
   next-release-in-days:
     description: "Next release in days"
