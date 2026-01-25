@@ -24,7 +24,7 @@ node index.js
 ```text
 .
 ├── action.yml      # GitHub Action manifest (inputs, outputs, runtime)
-├── index.js        # Main implementation (Node.js 20, no dependencies)
+├── index.js        # Main implementation (Node.js 20)
 ├── package.json    # Project metadata (for npm/marketplace)
 ├── LICENSE         # MIT License
 ├── README.md       # User documentation
@@ -36,7 +36,8 @@ node index.js
 ### Runtime
 
 - **Node.js 20** - Specified in action.yml
-- **No npm dependencies** - Uses only built-in `https` and `fs` modules
+- **Dependencies** - Uses `@actions/core` for GitHub Actions toolkit and
+  built-in `https` module for API requests
 
 ### Key Functions in index.js
 
@@ -60,7 +61,7 @@ node index.js
 3. Fetch placeholder version ID (e.g., "vNext")
 4. Update placeholder: rename, mark released, set date to today
 5. Create new placeholder version with target date (today + N days)
-6. Output new version ID via GITHUB_OUTPUT
+6. Output new version ID via `core.setOutput()`
 
 ## GitHub Action Inputs
 
@@ -78,7 +79,7 @@ node index.js
 ### Implemented Security Measures
 
 1. **HTTPS Required** - URL validation enforces HTTPS to protect API key
-2. **GITHUB_OUTPUT** - Uses secure environment file for outputs
+2. **@actions/core** - Uses official toolkit for secure input/output handling
 3. **Input Validation** - All inputs validated before use
 
 ### Security Best Practices for Users
@@ -90,7 +91,7 @@ node index.js
 
 ### Known Considerations
 
-- API responses are logged to console (may appear in workflow logs)
+- API responses logged via `core.debug()` (visible with debug logging enabled)
 - No request timeout configured on HTTP requests
 
 ## Development Notes
@@ -105,10 +106,10 @@ Since this action has no test suite, test manually:
 
 ### Making Changes
 
-- Keep the action dependency-free (Node.js built-ins only)
+- Use `@actions/core` for inputs, outputs, and logging
 - Maintain backwards compatibility with existing workflows
 - Update README.md when adding/changing inputs
-- Use GITHUB_OUTPUT for all action outputs
+- Run `npm install` after cloning to install dependencies
 - Run `npx markdownlint-cli "**/*.md"` after editing markdown files
 
 ## MantisHub API Reference

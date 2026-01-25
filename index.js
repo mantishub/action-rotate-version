@@ -4,48 +4,47 @@
  All rights reserved.
  **************************************************************************/
 
- const https = require('https');
+const https = require('https');
+const core = require('@actions/core');
 
 /**
- * Env variables from GitHub workflow input
+ * Get inputs from GitHub workflow using @actions/core
  */
 const params = {
-    url: process.env['INPUT_URL'] || "",
-    apiKey: process.env['INPUT_API-KEY'] || "",
-    project: process.env['INPUT_PROJECT'] || "",
-    releaseName: process.env['INPUT_RELEASE-NAME'] || "",
-    placeholderName: process.env['INPUT_PLACEHOLDER-NAME'] || "",
-    nextReleaseInDays: process.env['INPUT_NEXT-RELEASE-IN-DAYS'] || ""
+    url: core.getInput('url', { required: true }),
+    apiKey: core.getInput('api-key', { required: true }),
+    project: core.getInput('project', { required: true }),
+    releaseName: core.getInput('release-name', { required: true }),
+    placeholderName: core.getInput('placeholder-name', { required: true }),
+    nextReleaseInDays: core.getInput('next-release-in-days', { required: true })
 };
 
 /**
  * Main function
  */
 async function run() {
-    if (!params.url || !params.apiKey || !params.project || !params.releaseName
-        || !params.placeholderName || !params.nextReleaseInDays) {
-        throw new Error("All inputs are required: url, api-key, project, release-name, placeholder-name, next-release-in-days.");
+    try {
+        if (!params.url || !params.apiKey || !params.project || !params.releaseName
+            || !params.placeholderName || !params.nextReleaseInDays) {
+            core.setFailed("All inputs are required: url, api-key, project, release-name, placeholder-name, next-release-in-days.");
+            return;
+        }
+
+        // Validate URL format and require HTTPS for secure API key transmission
+        if (!params.url.startsWith('https://')) {
+            core.setFailed("URL must use HTTPS protocol to ensure secure API key transmission.");
+            return;
+        }
+
+        const newVersion = await rotateVersion(params);
+
+        // Use @actions/core to set output
+        core.setOutput('version-id', newVersion.version.id);
+
+        return newVersion.version.id;
+    } catch (error) {
+        core.setFailed(error.message);
     }
-
-    // Validate URL format and require HTTPS for secure API key transmission
-    if (!params.url.startsWith('https://')) {
-        throw new Error("URL must use HTTPS protocol to ensure secure API key transmission.");
-    }
-
-    const newVersion = await rotateVersion(params);
-
-    // Use GITHUB_OUTPUT environment file (secure method)
-    // Fallback to deprecated ::set-output for older runners
-    const fs = require('fs');
-    const outputFile = process.env['GITHUB_OUTPUT'];
-    if (outputFile) {
-        fs.appendFileSync(outputFile, `version-id=${newVersion.version.id}\n`);
-    } else {
-        // Deprecated method - kept for backwards compatibility only
-        console.log(`::set-output name=version-id::${newVersion.version.id}`);
-    }
-
-    return newVersion.version.id;
 }
 
 /**
@@ -54,54 +53,43 @@ async function run() {
  * @param data
  */
 async function rotateVersion(data) {
-    try {
-        const body = {
-            placeholderName: data.placeholderName,
-            releaseName: data.releaseName,
-            nextReleaseInDays: data.nextReleaseInDays
-        };
+    const body = {
+        placeholderName: data.placeholderName,
+        releaseName: data.releaseName,
+        nextReleaseInDays: data.nextReleaseInDays
+    };
 
-        // validate request body for create version
-        const validated = validateInput(body);
-        if (!validated) {
-            console.error('Validation errors')
-            process.exit(1)
-        }
-
-        // fetch project id from project name
-        const projectID = await getProjectID(String(data.project));
-
-        // get version ID from name e.g vNext
-        const versionID = await getVersionID(projectID, data.placeholderName);
-        if (versionID !== null) {
-            // update current release version (vNext) to tag name
-            const updateVersionBody = {
-                name: body.releaseName,
-                released: true,
-                timestamp: getDate(),
-            };
-
-            await updateVersion(projectID, versionID, updateVersionBody);
-        }
-
-        // Create a new version with placeholder name
-        const createVersionBody = {
-            name: body.placeholderName,
-            released: false,
-            obsolete: false,
-            timestamp: getDate(parseInt(body.nextReleaseInDays, 10))
-        };
-
-        return await createVersion(projectID, createVersionBody);
-    } catch (error) {
-        console.error("Failed to rotate version:", error.message);
-
-        if (error.response) {
-            console.error("Error response data:", error.response.data);
-        }
-
-        process.exit(1);
+    // validate request body for create version
+    const validated = validateInput(body);
+    if (!validated) {
+        throw new Error('Validation errors');
     }
+
+    // fetch project id from project name
+    const projectID = await getProjectID(String(data.project));
+
+    // get version ID from name e.g vNext
+    const versionID = await getVersionID(projectID, data.placeholderName);
+    if (versionID !== null) {
+        // update current release version (vNext) to tag name
+        const updateVersionBody = {
+            name: body.releaseName,
+            released: true,
+            timestamp: getDate(),
+        };
+
+        await updateVersion(projectID, versionID, updateVersionBody);
+    }
+
+    // Create a new version with placeholder name
+    const createVersionBody = {
+        name: body.placeholderName,
+        released: false,
+        obsolete: false,
+        timestamp: getDate(parseInt(body.nextReleaseInDays, 10))
+    };
+
+    return await createVersion(projectID, createVersionBody);
 }
 
 /**
@@ -134,7 +122,7 @@ async function httpRequest(url, method = 'GET', body = null) {
                 if (res.statusCode >= 200 && res.statusCode < 300) {
                     resolve(data); // Resolve with the response data
                 } else {
-                    console.log(`Request failed with status code ${res.statusCode}: ${data}`)
+                    core.error(`Request failed with status code ${res.statusCode}: ${data}`)
                     reject(new Error(`Request failed with status code ${res.statusCode}: ${data}`));
 
                 }
@@ -159,9 +147,9 @@ async function httpRequest(url, method = 'GET', body = null) {
  */
 async function fetchProjects() {
     const endpoint = `${params.url}/api/rest/projects`;
-    console.log('Making request : ' + endpoint)
+    core.info('Making request: ' + endpoint)
     const response = await httpRequest(endpoint); // Await the asynchronous call
-    console.log(JSON.parse(response));
+    core.debug(JSON.stringify(JSON.parse(response)));
     return JSON.parse(response);
 }
 
@@ -170,9 +158,9 @@ async function fetchProjects() {
  */
 async function fetchVersions(projectID) {
     const endpoint = `${params.url}/api/rest/projects/${projectID}/versions`;
-    console.log('Making request to:' + endpoint)
+    core.info('Making request to: ' + endpoint)
     const response = await httpRequest(endpoint); // Await the asynchronous call
-    console.log(JSON.parse(response));
+    core.debug(JSON.stringify(JSON.parse(response)));
     return JSON.parse(response);
 }
 
@@ -181,26 +169,19 @@ async function fetchVersions(projectID) {
  * @param projectName
  */
 async function getProjectID(projectName) {
-    try {
-        const response = await fetchProjects();
-        // Check if response.projects is empty
-        if (!(Object.prototype.hasOwnProperty.call(response, "projects") && response.projects.length > 0)) {
-            console.log(`No results found`);
-            process.exit(1);
-        }
-        // use `find` to search for the project by name
-        const project = response.projects.find(function (p) {
-            return p.name === projectName;
-        });
-        if (project) {
-            return project.id; // Return the project ID if found
-        } else {
-            console.error(`Project with name "${projectName}" not found.`);
-            process.exit(1);
-        }
-    } catch (error) {
-        console.error("Error fetching projects:", error.message);
-        process.exit(1);
+    const response = await fetchProjects();
+    // Check if response.projects is empty
+    if (!(Object.prototype.hasOwnProperty.call(response, "projects") && response.projects.length > 0)) {
+        throw new Error('No projects found');
+    }
+    // use `find` to search for the project by name
+    const project = response.projects.find(function (p) {
+        return p.name === projectName;
+    });
+    if (project) {
+        return project.id; // Return the project ID if found
+    } else {
+        throw new Error(`Project with name "${projectName}" not found.`);
     }
 }
 
@@ -210,25 +191,19 @@ async function getProjectID(projectName) {
  * @param versionName
  */
 async function getVersionID(projectID, versionName) {
-    try {
-        const response = await fetchVersions(projectID);
+    const response = await fetchVersions(projectID);
 
-        // Check if response.version is empty
-        if (!(Object.prototype.hasOwnProperty.call(response, "versions") && response.versions.length > 0)) {
-            console.log(`No results found`);
-            process.exit(1);
-        }
-
-        // use `find` to search for the project by name
-        const version = response.versions.find(function (p) {
-            return p.name === versionName;
-        });
-
-        return version ? version.id : null;
-    } catch (error) {
-        console.error("Error fetching version:", error.message);
-        process.exit(1);
+    // Check if response.version is empty
+    if (!(Object.prototype.hasOwnProperty.call(response, "versions") && response.versions.length > 0)) {
+        throw new Error('No versions found');
     }
+
+    // use `find` to search for the project by name
+    const version = response.versions.find(function (p) {
+        return p.name === versionName;
+    });
+
+    return version ? version.id : null;
 }
 
 /**
@@ -239,11 +214,11 @@ async function getVersionID(projectID, versionName) {
  */
 async function updateVersion(projectID, versionID, body) {
     const endpoint = `${params.url}/api/rest/projects/${projectID}/versions/${versionID}`;
-    console.log('Making request Patch request to update the version :' + endpoint)
-    console.log(body)
+    core.info('Making PATCH request to update the version: ' + endpoint)
+    core.debug(JSON.stringify(body))
     const response = await httpRequest(endpoint, 'PATCH', body);
     const responseBody = JSON.parse(response);
-    console.log(responseBody);
+    core.debug(JSON.stringify(responseBody));
     return responseBody;
 }
 
@@ -254,10 +229,10 @@ async function updateVersion(projectID, versionID, body) {
  */
 async function createVersion(projectID, body) {
     const endpoint = `${params.url}/api/rest/projects/${projectID}/versions`;
-    console.log('Making POST request to create new version :' + endpoint)
+    core.info('Making POST request to create new version: ' + endpoint)
     const response = await httpRequest(endpoint, 'POST', body);
     const responseBody = JSON.parse(response);
-    console.log(responseBody);
+    core.debug(JSON.stringify(responseBody));
     return responseBody;
 }
 
