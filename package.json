@@ -4,6 +4,7 @@
   "description": "A GitHub Action to rename upcoming release to specified name, mark it as released and create a new upcoming release in MantisHub.",
   "main": "index.js",
   "scripts": {
+    "build": "ncc build index.js -o dist",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -34,5 +35,8 @@
   },
   "dependencies": {
     "@actions/core": "^1.11.1"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.38.4"
   }
 }
