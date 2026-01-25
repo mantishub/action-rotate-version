@@ -1,5 +1,8 @@
 name: "Rotate MantisHub Version"
 description: "An action to rename upcoming release to specify name, mark it as released and create a new upcoming release."
+branding:
+  icon: "refresh-cw"
+  color: "green"
 
 inputs:
   url:

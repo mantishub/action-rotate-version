@@ -22,13 +22,29 @@ const params = {
  * Main function
  */
 async function run() {
-    if (!params.url || !params.apiKey || !params.project || !params.releaseName || !params.project
-        || !params.placeholderName || !params.placeholderName) {
-        throw new Error("Project name, url and api-key inputs are required.");
+    if (!params.url || !params.apiKey || !params.project || !params.releaseName
+        || !params.placeholderName || !params.nextReleaseInDays) {
+        throw new Error("All inputs are required: url, api-key, project, release-name, placeholder-name, next-release-in-days.");
+    }
+
+    // Validate URL format and require HTTPS for secure API key transmission
+    if (!params.url.startsWith('https://')) {
+        throw new Error("URL must use HTTPS protocol to ensure secure API key transmission.");
     }
 
     const newVersion = await rotateVersion(params);
-    console.log(`::set-output name=version-id::${newVersion.version.id}`);
+
+    // Use GITHUB_OUTPUT environment file (secure method)
+    // Fallback to deprecated ::set-output for older runners
+    const fs = require('fs');
+    const outputFile = process.env['GITHUB_OUTPUT'];
+    if (outputFile) {
+        fs.appendFileSync(outputFile, `version-id=${newVersion.version.id}\n`);
+    } else {
+        // Deprecated method - kept for backwards compatibility only
+        console.log(`::set-output name=version-id::${newVersion.version.id}`);
+    }
+
     return newVersion.version.id;
 }
 
