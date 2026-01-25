@@ -229,7 +229,7 @@ Enable debug logging by setting the `ACTIONS_STEP_DEBUG` secret to `true` in you
 
 ## License
 
-This project is available under the terms specified in the repository.
+This project is licensed under the [MIT License](LICENSE).
 
 ## Support
 

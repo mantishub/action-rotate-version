@@ -1,0 +1,35 @@
+{
+  "name": "action-rotate-version",
+  "version": "1.0.0",
+  "description": "A GitHub Action to rename upcoming release to specified name, mark it as released and create a new upcoming release in MantisHub.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mantishub/action-rotate-version.git"
+  },
+  "keywords": [
+    "github-action",
+    "mantishub",
+    "mantisbt",
+    "mantis-issue-tracker",
+    "mantis-bug-tracker",
+    "version-management",
+    "release-automation"
+  ],
+  "author": {
+    "name": "MantisHub",
+    "email": "victor@mantishub.net",
+    "url": "https://www.mantishub.com"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mantishub/action-rotate-version/issues"
+  },
+  "homepage": "https://github.com/mantishub/action-rotate-version#readme",
+  "engines": {
+    "node": ">=20"
+  }
+}

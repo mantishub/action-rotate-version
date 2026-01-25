@@ -23,6 +23,8 @@ node index.js
 .
 ├── action.yml      # GitHub Action manifest (inputs, outputs, runtime)
 ├── index.js        # Main implementation (Node.js 20, no dependencies)
+├── package.json    # Project metadata (for npm/marketplace)
+├── LICENSE         # MIT License
 ├── README.md       # User documentation
 └── CLAUDE.md       # This file
 ```
