@@ -1,20 +1,26 @@
 # MantisHub Rotate Version GitHub Action
 
-Automate your release version management in [MantisHub](https://www.mantishub.com) directly from your GitHub workflows.
+Automate your release version management in [MantisHub](https://www.mantishub.com)
+directly from your GitHub workflows.
 
 ## Overview
 
-This GitHub Action implements a common version rotation pattern for release management:
+This GitHub Action implements a common version rotation pattern for release
+management:
 
-1. **Mark as Released** - Sets the current placeholder version (e.g., "vNext") as released with today's date
-2. **Rename Version** - Renames the placeholder to your actual release name (e.g., "1.0.0")
-3. **Create New Placeholder** - Creates a new placeholder version for the next development cycle
+1. **Mark as Released** - Sets the current placeholder version (e.g., "vNext")
+   as released with today's date
+2. **Rename Version** - Renames the placeholder to your actual release name
+   (e.g., "1.0.0")
+3. **Create New Placeholder** - Creates a new placeholder version for the next
+   development cycle
 
-This approach ensures you always have a version available to associate issues with that are targeted for or fixed in the upcoming release.
+This approach ensures you always have a version available to associate issues
+with that are targeted for or fixed in the upcoming release.
 
 ### Visual Workflow
 
-```
+```text
 Before Release:                    After Release:
 ┌─────────────────────┐           ┌─────────────────────┐
 │ vNext (unreleased)  │  ──────►  │ 1.0.0 (released)    │
@@ -31,7 +37,8 @@ Before Release:                    After Release:
 
 - A [MantisHub](https://www.mantishub.com) account with an active project
 - A MantisHub API token with permissions to manage versions
-- A placeholder version (e.g., "vNext") already created in your MantisHub project
+- A placeholder version (e.g., "vNext") already created in your MantisHub
+  project
 
 ### Generating a MantisHub API Token
 
@@ -43,20 +50,20 @@ Before Release:                    After Release:
 
 ## Inputs
 
-| Input | Description | Required | Example |
-|-------|-------------|----------|---------|
-| `url` | Base URL of your MantisHub instance | Yes | `https://example.mantishub.io` |
-| `api-key` | MantisHub API token for authentication | Yes | `${{ secrets.MANTISHUB_API_KEY }}` |
-| `project` | Name of the project in MantisHub | Yes | `MyProject` |
-| `placeholder-name` | Name of the placeholder version to rotate | Yes | `vNext` |
-| `release-name` | Name for the released version | Yes | `1.0.0` |
-| `next-release-in-days` | Days until the next planned release | Yes | `14` |
+All inputs are **required**.
+
+- **`url`** - Base URL of your MantisHub instance
+  (e.g., `https://example.mantishub.io`)
+- **`api-key`** - MantisHub API token for authentication
+  (e.g., `${{ secrets.MANTISHUB_API_KEY }}`)
+- **`project`** - Name of the project in MantisHub (e.g., `MyProject`)
+- **`placeholder-name`** - Placeholder version to rotate (e.g., `vNext`)
+- **`release-name`** - Name for the released version (e.g., `1.0.0`)
+- **`next-release-in-days`** - Days until the next planned release (e.g., `14`)
 
 ## Outputs
 
-| Output | Description |
-|--------|-------------|
-| `version-id` | The ID of the newly created placeholder version |
+- **`version-id`** - The ID of the newly created placeholder version
 
 ## Usage
 
@@ -101,7 +108,9 @@ jobs:
           next-release-in-days: 14
 
       - name: Log New Version ID
-        run: echo "Created new placeholder version with ID: ${{ steps.rotate-version.outputs.version-id }}"
+        run: |
+          echo "Created new placeholder version"
+          echo "ID: ${{ steps.rotate-version.outputs.version-id }}"
 ```
 
 ### Manual Dispatch Workflow
@@ -143,7 +152,8 @@ jobs:
         run: |
           echo "## Version Rotation Complete" >> $GITHUB_STEP_SUMMARY
           echo "- Released: ${{ inputs.release_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- New placeholder version ID: ${{ steps.rotate-version.outputs.version-id }}" >> $GITHUB_STEP_SUMMARY
+          VID="${{ steps.rotate-version.outputs.version-id }}"
+          echo "- New version ID: $VID" >> $GITHUB_STEP_SUMMARY
 ```
 
 ### Multi-Project Workflow
@@ -188,15 +198,20 @@ Store your MantisHub API key securely as a GitHub secret:
 
 ## How It Works
 
-The action performs the following API operations against your MantisHub instance:
+The action performs the following API operations against your MantisHub
+instance:
 
-1. **Fetch Project** - Retrieves the project ID using the project name via `GET /api/rest/projects`
-2. **Fetch Version** - Finds the placeholder version ID via `GET /api/rest/projects/{id}/versions`
-3. **Update Version** - Updates the placeholder via `PATCH /api/rest/projects/{id}/versions/{vid}`:
+1. **Fetch Project** - Retrieves the project ID using the project name via
+   `GET /api/rest/projects`
+2. **Fetch Version** - Finds the placeholder version ID via
+   `GET /api/rest/projects/{id}/versions`
+3. **Update Version** - Updates the placeholder via
+   `PATCH /api/rest/projects/{id}/versions/{vid}`:
    - Renames to the release name
    - Sets `released: true`
    - Sets release date to today
-4. **Create Version** - Creates new placeholder via `POST /api/rest/projects/{id}/versions`:
+4. **Create Version** - Creates new placeholder via
+   `POST /api/rest/projects/{id}/versions`:
    - Uses the placeholder name
    - Sets `released: false`
    - Sets target date to now + specified days
@@ -205,16 +220,22 @@ The action performs the following API operations against your MantisHub instance
 
 ### Common Issues
 
-| Issue | Possible Cause | Solution |
-|-------|---------------|----------|
-| `Project not found` | Project name doesn't match | Verify the exact project name in MantisHub (case-sensitive) |
-| `Version not found` | Placeholder version doesn't exist | Create the placeholder version in MantisHub first |
-| `401 Unauthorized` | Invalid or expired API key | Generate a new API token in MantisHub |
-| `403 Forbidden` | Insufficient permissions | Ensure your API token has version management permissions |
+**`Project not found`**
+: Project name doesn't match. Verify exact name (case-sensitive).
+
+**`Version not found`**
+: Placeholder doesn't exist. Create the placeholder in MantisHub first.
+
+**`401 Unauthorized`**
+: Invalid or expired API key. Generate a new API token in MantisHub.
+
+**`403 Forbidden`**
+: Insufficient permissions. Check API token has version management access.
 
 ### Debug Mode
 
-Enable debug logging by setting the `ACTIONS_STEP_DEBUG` secret to `true` in your repository.
+Enable debug logging by setting the `ACTIONS_STEP_DEBUG` secret to `true` in
+your repository.
 
 ## Requirements
 
@@ -224,8 +245,10 @@ Enable debug logging by setting the `ACTIONS_STEP_DEBUG` secret to `true` in you
 ## Related Resources
 
 - [MantisHub](https://www.mantishub.com) - Cloud-hosted bug tracking
-- [MantisHub API Documentation](https://www.mantishub.com/docs) - REST API reference
-- [GitHub Actions Documentation](https://docs.github.com/en/actions) - Learn more about GitHub Actions
+- [MantisHub API Documentation](https://www.mantishub.com/docs) - REST API
+  reference
+- [GitHub Actions Documentation](https://docs.github.com/en/actions) - Learn
+  more about GitHub Actions
 
 ## License
 
@@ -233,4 +256,6 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## Support
 
-For issues and feature requests, please [open an issue](https://github.com/mantishub/action-rotate-version/issues) on GitHub.
+For issues and feature requests, please
+[open an issue](https://github.com/mantishub/action-rotate-version/issues)
+on GitHub.
