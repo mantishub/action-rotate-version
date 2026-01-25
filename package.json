@@ -31,5 +31,8 @@
   "homepage": "https://github.com/mantishub/action-rotate-version#readme",
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "@actions/core": "^1.11.1"
   }
 }
