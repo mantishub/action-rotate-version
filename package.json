@@ -34,7 +34,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@actions/core": "^3.0.0"
+    "@actions/core": "^3.0.1"
   },
   "devDependencies": {
     "@vercel/ncc": "^0.38.4"
